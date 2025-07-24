@@ -1,0 +1,13 @@
+-- Run the below query to get Log percentage of the DBs
+DBCC SQLPERF(logspace)
+
+
+--why it's filled the log file( it will provide the reason ( Log_backup, Active Transaction,CHECKPOINT, NOTHING, AVAILABLITY REPLICA)
+SELECT 
+    name AS [Database Name], 
+    log_reuse_wait_desc AS [Log Reuse Wait Reason] 
+FROM sys.databases 
+WHERE name = 'YourDatabase'; -- Change to your DB name
+
+--Based on the result we will proceed with the action
+
