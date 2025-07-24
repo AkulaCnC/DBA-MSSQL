@@ -1,0 +1,41 @@
+--Go to ---> File Explorer or Disk Management
+
+EXEC xp_fixeddrives;
+
+
+--Check Database File Sizes (MDF, LDF, TempDB)
+SELECT 
+    name AS [Logical Name],
+    physical_name AS [File Path],
+    type_desc,
+    size * 8 / 1024 AS [Size (MB)],
+    max_size,
+    growth,
+    growth * 8 / 1024 AS [Growth Size MB]
+FROM sys.master_files
+WHERE database_id > 4; -- exclude system DBs
+
+--Check Autogrowth Settings
+
+EXEC sp_helpfile;
+
+--Check TempDB Usage
+
+USE tempdb;
+GO
+EXEC sp_spaceused;
+
+--Check log space if Log drive getting full
+
+DBCC SQLPERF(LOGSPACE);
+
+--if Log drive full try to shrink the log file
+--if Backup drive full, try to purge the old backup files\
+--if MDF file full you can add the othe ndf file or moved to any available drive 
+
+ALTER DATABASE YourDB
+MODIFY FILE (NAME = YourDB_Data, FILENAME = 'E:\SQLData\YourDB.mdf');
+
+
+
+
