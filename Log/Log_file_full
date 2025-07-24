@@ -10,4 +10,42 @@ FROM sys.databases
 WHERE name = 'YourDatabase'; -- Change to your DB name
 
 --Based on the result we will proceed with the action
+--Log Backup
+
+BACKUP LOG [YourDatabase] TO DISK = 'D:\Backups\YourDatabase_Log.trn';
+
+--Active Transaction
+DBCC OPENTRAN('YourDatabase');
+or
+SELECT 
+    at.transaction_id,
+    at.name,
+    at.transaction_begin_time,
+    s.session_id,
+    r.status,
+    r.command,
+    r.blocking_session_id
+FROM sys.dm_tran_active_transactions at
+JOIN sys.dm_exec_requests r ON at.transaction_id = r.transaction_id
+JOIN sys.dm_exec_sessions s ON r.session_id = s.session_id;
+
+--Status of Secondary Replica
+SELECT 
+    ag.name,
+    ar.replica_server_name,
+    drs.synchronization_state_desc,
+    drs.log_send_queue_size,
+    drs.redo_queue_size
+FROM sys.dm_hadr_database_replica_states drs
+JOIN sys.availability_groups ag ON drs.group_id = ag.group_id
+JOIN sys.availability_replicas ar ON drs.replica_id = ar.replica_id
+WHERE drs.database_name = 'YourDatabase';
+
+--CHECKPOINT
+USE YourDatabase;
+CHECKPOINT;
+
+
+
+
 
