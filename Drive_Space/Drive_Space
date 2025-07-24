@@ -1,40 +1,33 @@
---Go to ---> File Explorer or Disk Management
+ecute below sql query--Go to ---> File Explorer or Disk Management
 
 EXEC xp_fixeddrives;
 
 
---Check Database File Sizes (MDF, LDF, TempDB)
+--Check Database File Sizes (MDF and LDF)
 SELECT 
-    name AS [Logical Name],
-    physical_name AS [File Path],
-    type_desc,
-    size * 8 / 1024 AS [Size (MB)],
-    max_size,
-    growth,
-    growth * 8 / 1024 AS [Growth Size MB]
-FROM sys.master_files
-WHERE database_id > 4; -- exclude system DBs
+    DB_NAME(mf.database_id) AS [Database Name],
+    mf.name AS [Logical Name],
+    mf.physical_name AS [File Path],
+    UPPER(LEFT(mf.physical_name, 2)) AS [Drive Letter],
+    mf.type_desc AS [File Type], -- ROWS = MDF/NDF, LOG = LDF
+    CAST(CAST(mf.size AS BIGINT) * 8 / 1024.0 / 1024 AS DECIMAL(10,2)) AS [Size (GB)],
+    CASE 
+        WHEN mf.max_size = -1 THEN 'Unlimited'
+        ELSE CAST(CAST(CAST(mf.max_size AS BIGINT) * 8 / 1024.0 / 1024 AS DECIMAL(10,2)) AS VARCHAR(20)) + ' GB'
+    END AS [Max Size (GB)],
+    CASE 
+        WHEN mf.is_percent_growth = 1 THEN CAST(mf.growth AS VARCHAR(10)) + '%'
+        ELSE CAST(CAST(CAST(mf.growth AS BIGINT) * 8 / 1024.0 / 1024 AS DECIMAL(10,2)) AS VARCHAR(20)) + ' GB'
+    END AS [Growth]
+FROM sys.master_files AS mf
+ORDER BY CAST(mf.size AS BIGINT) DESC;
 
---Check Autogrowth Settings
+--If MDF Drives are getting full-wr request drive space (Prod DB Shrinking not a best Practice)
+--If LDF Drive is full you can shrink 
 
-EXEC sp_helpfile;
 
---Check TempDB Usage
 
-USE tempdb;
-GO
-EXEC sp_spaceused;
 
---Check log space if Log drive getting full
-
-DBCC SQLPERF(LOGSPACE);
-
---if Log drive full try to shrink the log file
---if Backup drive full, try to purge the old backup files\
---if MDF file full you can add the othe ndf file or moved to any available drive 
-
-ALTER DATABASE YourDB
-MODIFY FILE (NAME = YourDB_Data, FILENAME = 'E:\SQLData\YourDB.mdf');
 
 
 
