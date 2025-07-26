@@ -1,0 +1,13 @@
+-- user permissions at database level
+
+SELECT 
+    pr.name AS [UserName],
+    STUFF((
+        SELECT DISTINCT ', ' + dp_inner.permission_name
+        FROM sys.database_permissions dp_inner
+        WHERE dp_inner.grantee_principal_id = pr.principal_id
+        FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)'), 1, 2, '') AS [Permissions]
+FROM sys.database_principals pr
+WHERE pr.type IN ('S', 'U', 'G') -- SQL users, Windows users, and groups
+  AND pr.name NOT IN ('dbo', 'guest', 'INFORMATION_SCHEMA', 'sys')
+ORDER BY pr.name;
